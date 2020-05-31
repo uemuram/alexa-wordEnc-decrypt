@@ -132,6 +132,20 @@ const ErrorHandler = {
     }
 };
 
+// リクエストインターセプター(エラー調査用)
+const RequestLog = {
+    process(handlerInput) {
+        //console.log("REQUEST ENVELOPE = " + JSON.stringify(handlerInput.requestEnvelope));
+        console.log("HANDLER INPUT = " + JSON.stringify(handlerInput));
+        const requestType = Alexa.getRequestType(handlerInput.requestEnvelope);
+        console.log("REQUEST TYPE =  " + requestType);
+        if (requestType === 'IntentRequest') {
+            console.log("INTENT NAME =  " + Alexa.getIntentName(handlerInput.requestEnvelope));
+        }
+        return;
+    }
+};
+
 // The SkillBuilder acts as the entry point for your skill, routing all request and response
 // payloads to the handlers above. Make sure any new handlers or interceptors you've
 // defined are included below. The order matters - they're processed top to bottom.
@@ -145,8 +159,9 @@ exports.handler = Alexa.SkillBuilders.custom()
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
         IntentReflectorHandler, // make sure IntentReflectorHandler is last so it doesn't override your custom intent handlers
-        ) 
+    )
     .addErrorHandlers(
         ErrorHandler,
-        )
+    )
+    .addRequestInterceptors(RequestLog)
     .lambda();
