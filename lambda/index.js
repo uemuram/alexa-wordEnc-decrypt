@@ -3,7 +3,7 @@
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
 const CommonUtil = require('/opt/CommonUtil');
-const cu = new CommonUtil();
+const u = new CommonUtil();
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
