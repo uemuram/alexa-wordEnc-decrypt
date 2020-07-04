@@ -10,7 +10,7 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'ようこそ。このスキルでは暗号化されたメッセージを複合化します。';
+        const speakOutput = 'ようこそ。このスキルでは、姉妹スキル「暗号くん」で暗号化されたメッセージを解読します。';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
