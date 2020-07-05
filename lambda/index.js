@@ -4,14 +4,43 @@
 const Alexa = require('ask-sdk-core');
 const CommonUtil = require('/opt/CommonUtil');
 const u = new CommonUtil();
+const Constant = require('/opt/Constant');
+const c = new Constant();
+
+// ステータス
+const ACCEPT_WORD = 0;
+const CONFIRM_USE_KEY = 1;
+const ACCEPT_KEY = 2;
+const CONFIRM_REREAD = 3;
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-//        const speakOutput = 'ようこそ。このスキルでは、姉妹スキル「暗号くん」で暗号化されたメッセージを解読します。';
-        const speakOutput = 'ようこそ。解読します。';
+        //        const speakOutput = 'ようこそ。このスキルでは、姉妹スキル「暗号くん」で暗号化されたメッセージを解読します。';
+        const speakOutput = 'ようこそ。解読します。鍵は設定されていますか?';
+        const repromptOutput = '鍵は設定されていますか?';
+
+        u.setState(handlerInput, CONFIRM_USE_KEY);
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(repromptOutput)
+            .getResponse();
+    }
+};
+
+// 暗号化用の鍵を要求する
+const RequestKeyIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+            && u.checkState(handlerInput, CONFIRM_USE_KEY);
+    },
+    handle(handlerInput) {
+        const speakOutput = '鍵に使う4桁の数字を言ってください';
+
+        u.setState(handlerInput, ACCEPT_KEY);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -19,46 +48,82 @@ const LaunchRequestHandler = {
     }
 };
 
-const YesIntentHandler = {
+// 暗号化用の鍵を受け付け、単語の受付を開始する
+const AcceptKeyAndStartAcceptWordIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent';
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptKeyIntent'
+            && u.checkState(handlerInput, ACCEPT_KEY);
     },
     handle(handlerInput) {
-        const speakOutput = 'yesですね。';
+        const speakOutput = '鍵xxで解読します。1つ目の単語をどうぞ';
+
+        u.setState(handlerInput, ACCEPT_WORD);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .reprompt(speakOutput)
             .getResponse();
     }
 };
 
-const NoIntentHandler = {
+// 暗号化用の鍵なしで、単語の受付を開始する
+const StartAcceptWordIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent';
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+            && u.checkState(handlerInput, CONFIRM_USE_KEY);
     },
     handle(handlerInput) {
-        const speakOutput = 'noですね。';
+        const speakOutput = '鍵なしで解読します。1つ目の単語をどうぞ';
+
+        u.setState(handlerInput, ACCEPT_WORD);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .reprompt(speakOutput)
             .getResponse();
     }
 };
-const HelloWorldIntentHandler = {
+
+// 単語を受け付ける
+const AcceptWordIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'HelloWorldIntent';
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptWordIntent'
+            && u.checkState(handlerInput, ACCEPT_WORD);
     },
     handle(handlerInput) {
-        const speakOutput = 'Hello World!';
+
+        // 単語を確認
+        let wordSlot = handlerInput.requestEnvelope.request.intent.slots.Word.resolutions;
+        let wordValue = handlerInput.requestEnvelope.request.intent.slots.Word.value;
+        console.log("単語取得Value:" + wordValue);
+
+        // ステータスチェック
+        let statusCode = wordSlot.resolutionsPerAuthority[0].status.code;
+        console.log("単語取得ステータス:" + statusCode);
+        let wordId, wordName;
+        if (statusCode === 'ER_SUCCESS_MATCH') {
+            wordId = wordSlot.resolutionsPerAuthority[0].values[0].value.id;
+            wordName = wordSlot.resolutionsPerAuthority[0].values[0].value.name;
+
+            console.log("単語取得成功:" + wordName + "[" + wordId + "]");
+        } else {
+            console.log("単語取得失敗");
+            return handlerInput.responseBuilder
+                .speak('単語を認識できませんでした。もう一度お願いします。')
+                .reprompt(c.MSG_notGenerateScrambleYet)
+                .getResponse();
+        }
+        const speakOutput = '単語を受け付けました';
+        u.setState(handlerInput, ACCEPT_WORD);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .reprompt(speakOutput)
             .getResponse();
     }
 };
+
+
 const HelpIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -153,9 +218,10 @@ const RequestLog = {
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
-        YesIntentHandler,
-        NoIntentHandler,
-        HelloWorldIntentHandler,
+        RequestKeyIntentHandler,
+        AcceptKeyAndStartAcceptWordIntentHandler,
+        StartAcceptWordIntentHandler,
+        AcceptWordIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
