@@ -66,6 +66,46 @@ const AcceptKeyAndStartAcceptWordIntentHandler = {
     }
 };
 
+// 暗号化用の鍵を受け付け、単語の受付を開始する(2)
+// 単語として入ってきてしまった場合
+const AcceptKeyFollowAndStartAcceptWordIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptWordIntent'
+            && u.checkState(handlerInput, ACCEPT_KEY);
+    },
+    handle(handlerInput) {
+
+        // 鍵(4桁の数値)になっているかチェック
+        let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Word');
+        console.log("入力(鍵?) :" + key);
+        // 空白を除去
+        key = key.replace(/ /g, '');
+        // "5"が「号」になるパターンがあるので補正
+        key = key.replace(/号/g, '5');
+        console.log("入力(補正後) :" + key);
+
+        // 補正した上で「4桁の数字」にならなけばエラー返却
+        if (!key.match(/^[0-9]{4}$/)) {
+            const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
+            const speakOutput = `鍵を認識できませんでした。4桁の数字を言ってください。`;
+            console.log(intentName);
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt('鍵に使う4桁の数字を言ってください')
+                .getResponse();
+        }
+
+        const speakOutput = '鍵xxで解読します。1つ目の単語をどうぞ';
+        u.setState(handlerInput, ACCEPT_WORD);
+        u.setSessionValue(handlerInput, 'WORD_NUM', 1);
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(speakOutput)
+            .getResponse();
+    }
+};
+
 // 暗号化用の鍵なしで、単語の受付を開始する
 const StartAcceptWordIntentHandler = {
     canHandle(handlerInput) {
@@ -236,6 +276,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         LaunchRequestHandler,
         RequestKeyIntentHandler,
         AcceptKeyAndStartAcceptWordIntentHandler,
+        AcceptKeyFollowAndStartAcceptWordIntentHandler,
         StartAcceptWordIntentHandler,
         AcceptWordIntentHandler,
         HelpIntentHandler,
