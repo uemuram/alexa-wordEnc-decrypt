@@ -11,7 +11,6 @@ const c = new Constant();
 const ACCEPT_WORD = 0;
 const CONFIRM_USE_KEY = 1;
 const ACCEPT_KEY = 2;
-const CONFIRM_REREAD = 3;
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -59,6 +58,7 @@ const AcceptKeyAndStartAcceptWordIntentHandler = {
         const speakOutput = '鍵xxで解読します。1つ目の単語をどうぞ';
 
         u.setState(handlerInput, ACCEPT_WORD);
+        u.setSessionValue(handlerInput, 'WORD_NUM', 0);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -77,6 +77,7 @@ const StartAcceptWordIntentHandler = {
         const speakOutput = '鍵なしで解読します。1つ目の単語をどうぞ';
 
         u.setState(handlerInput, ACCEPT_WORD);
+        u.setSessionValue(handlerInput, 'WORD_NUM', 0);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -98,26 +99,29 @@ const AcceptWordIntentHandler = {
         let wordValue = handlerInput.requestEnvelope.request.intent.slots.Word.value;
         console.log("単語取得Value:" + wordValue);
 
-        // ステータスチェック
+        // ステータスチェック。失敗の場合は再受付
         let statusCode = wordSlot.resolutionsPerAuthority[0].status.code;
         console.log("単語取得ステータス:" + statusCode);
-        let wordId, wordName;
-        if (statusCode === 'ER_SUCCESS_MATCH') {
-            wordId = wordSlot.resolutionsPerAuthority[0].values[0].value.id;
-            wordName = wordSlot.resolutionsPerAuthority[0].values[0].value.name;
-
-            console.log("単語取得成功:" + wordName + "[" + wordId + "]");
-        } else {
+        if (statusCode !== 'ER_SUCCESS_MATCH') {
             console.log("単語取得失敗");
             return handlerInput.responseBuilder
                 .speak('単語を認識できませんでした。もう一度お願いします。')
+                // TODO 最終的には消す
+                .withSimpleCard('失敗単語', wordValue)
                 .reprompt(c.MSG_notGenerateScrambleYet)
                 .getResponse();
         }
-        const speakOutput = '単語を受け付けました';
-        u.setState(handlerInput, ACCEPT_WORD);
+
+        // 単語取得成功した場合
+        let wordId = wordSlot.resolutionsPerAuthority[0].values[0].value.id;
+        let wordName = wordSlot.resolutionsPerAuthority[0].values[0].value.name;
+        console.log("単語取得成功:" + wordName + "[" + wordId + "]");
+
+        //        const speakOutput = '単語を受け付けました';
+        const speakOutput = wordName;
         return handlerInput.responseBuilder
             .speak(speakOutput)
+            .withSimpleCard('成功単語', wordName + '(' + wordValue + ')')
             .reprompt(speakOutput)
             .getResponse();
     }

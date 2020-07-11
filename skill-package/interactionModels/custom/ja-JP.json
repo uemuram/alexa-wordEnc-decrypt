@@ -56,11 +56,11 @@
                 {
                     "name" : "ENCRYPT_WORD",
                     "values" : [
-                        {"id":"0","name":{"value":"1000年後"}},
-                        {"id":"1","name":{"value":"100マス計算"}},
+                        {"id":"0","name":{"value":"1000年後","synonyms":["せんねんご"]}},
+                        {"id":"1","name":{"value":"100マス計算","synonyms":["百マス計算"]}},
                         {"id":"2","name":{"value":"100円ショップ","synonyms":["百円ショップ"]}},
-                        {"id":"3","name":{"value":"100円玉"}},
-                        {"id":"4","name":{"value":"10円玉"}},
+                        {"id":"3","name":{"value":"100円玉","synonyms":["百円玉"]}},
+                        {"id":"4","name":{"value":"10円玉","synonyms":["十円玉","じゅうえんだま"]}},
                         {"id":"5","name":{"value":"10月"}},
                         {"id":"6","name":{"value":"11月"}},
                         {"id":"7","name":{"value":"12月"}},
@@ -6944,7 +6944,7 @@
                         {"id":"6885","name":{"value":"蹲踞"}},
                         {"id":"6886","name":{"value":"閻魔大王"}},
                         {"id":"6887","name":{"value":"頸動脈"}},
-                        {"id":"6888","name":{"value":"魑魅魍魎"}}                                                                   
+                        {"id":"6888","name":{"value":"魑魅魍魎"}}
                     ]
                 }
             ]
