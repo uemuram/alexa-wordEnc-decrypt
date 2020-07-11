@@ -58,7 +58,7 @@ const AcceptKeyAndStartAcceptWordIntentHandler = {
         const speakOutput = '鍵xxで解読します。1つ目の単語をどうぞ';
 
         u.setState(handlerInput, ACCEPT_WORD);
-        u.setSessionValue(handlerInput, 'WORD_NUM', 0);
+        u.setSessionValue(handlerInput, 'WORD_NUM', 1);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -77,7 +77,7 @@ const StartAcceptWordIntentHandler = {
         const speakOutput = '鍵なしで解読します。1つ目の単語をどうぞ';
 
         u.setState(handlerInput, ACCEPT_WORD);
-        u.setSessionValue(handlerInput, 'WORD_NUM', 0);
+        u.setSessionValue(handlerInput, 'WORD_NUM', 1);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -99,11 +99,14 @@ const AcceptWordIntentHandler = {
         let wordValue = handlerInput.requestEnvelope.request.intent.slots.Word.value;
         console.log("単語取得Value:" + wordValue);
 
+        // 何番目の単語を取り扱っているかチェック
+        const wordNum = u.getSessionValue(handlerInput, 'WORD_NUM');
+
         // ステータスチェック。失敗の場合は再受付
         let statusCode = wordSlot.resolutionsPerAuthority[0].status.code;
         console.log("単語取得ステータス:" + statusCode);
         if (statusCode !== 'ER_SUCCESS_MATCH') {
-            console.log("単語取得失敗");
+            console.log("単語取得失敗(" + wordNum + "番目)");
             return handlerInput.responseBuilder
                 .speak('単語を認識できませんでした。もう一度お願いします。')
                 // TODO 最終的には消す
@@ -113,9 +116,18 @@ const AcceptWordIntentHandler = {
         }
 
         // 単語取得成功した場合
-        let wordId = wordSlot.resolutionsPerAuthority[0].values[0].value.id;
+        let wordId = parseInt(wordSlot.resolutionsPerAuthority[0].values[0].value.id);
         let wordName = wordSlot.resolutionsPerAuthority[0].values[0].value.name;
-        console.log("単語取得成功:" + wordName + "[" + wordId + "]");
+        console.log("単語取得成功(" + wordNum + "番目): " + wordName + "[" + wordId + "]");
+
+        // 1つ目だった場合、単語の数と内部キーを算出
+        if (wordNum == 1) {
+            let keyInfo = u.getInnerKeyAndWordCount(wordId);
+            let innerKey = keyInfo.innerKey;
+            let wordCount = keyInfo.wordCount;
+            console.log("内部キー:" + innerKey);
+            console.log("単語数:" + wordCount);
+        }
 
         //        const speakOutput = '単語を受け付けました';
         const speakOutput = wordName;
