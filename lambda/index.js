@@ -2,6 +2,7 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
+const Speech = require('ssml-builder');
 const CommonUtil = require('/opt/CommonUtil');
 const u = new CommonUtil();
 const Constant = require('/opt/Constant');
@@ -37,7 +38,7 @@ const RequestKeyIntentHandler = {
             && u.checkState(handlerInput, CONFIRM_USE_KEY);
     },
     handle(handlerInput) {
-        const speakOutput = '鍵に使う4桁の数字を言ってください';
+        const speakOutput = '鍵に設定されている4桁の数字を言ってください';
 
         u.setState(handlerInput, ACCEPT_KEY);
         return handlerInput.responseBuilder
@@ -55,13 +56,22 @@ const AcceptKeyAndStartAcceptWordIntentHandler = {
             && u.checkState(handlerInput, ACCEPT_KEY);
     },
     handle(handlerInput) {
-        const speakOutput = '鍵xxで解読します。1つ目の単語をどうぞ';
+        let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Key');
+        let intKey = parseInt(key);
+        console.log('鍵 :' + key);
+        console.log('鍵(int) :' + intKey);
+
+        let speech = new Speech()
+            .say('鍵')
+            .sayAs({ "word": key, "interpret": "digits" })
+            .say('で解読します。1つ目の単語をどうぞ');
 
         u.setState(handlerInput, ACCEPT_WORD);
-        u.setSessionValue(handlerInput, 'WORD_NUM', 1);
+        u.setSessionValue(handlerInput, 'WORD_COUNT', 1);
+        u.setSessionValue(handlerInput, 'ENCRYPTED_KEY', intKey);
         return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(speakOutput)
+            .speak(speech.ssml())
+            .reprompt("1つ目の単語をどうぞ")
             .getResponse();
     }
 };
@@ -92,16 +102,26 @@ const AcceptKeyFollowAndStartAcceptWordIntentHandler = {
             console.log(intentName);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('鍵に使う4桁の数字を言ってください')
+                .reprompt('鍵に設定されている4桁の数字を言ってください')
                 .getResponse();
         }
 
-        const speakOutput = '鍵xxで解読します。1つ目の単語をどうぞ';
+        let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Key');
+        let intKey = parseInt(key);
+        console.log('鍵 :' + key);
+        console.log('鍵(int) :' + intKey);
+
+        let speech = new Speech()
+            .say('鍵')
+            .sayAs({ "word": key, "interpret": "digits" })
+            .say('で解読します。1つ目の単語をどうぞ');
+
         u.setState(handlerInput, ACCEPT_WORD);
-        u.setSessionValue(handlerInput, 'WORD_NUM', 1);
+        u.setSessionValue(handlerInput, 'WORD_COUNT', 1);
+        u.setSessionValue(handlerInput, 'ENCRYPTED_KEY', intKey);
         return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(speakOutput)
+            .speak(speech.ssml())
+            .reprompt("1つ目の単語をどうぞ")
             .getResponse();
     }
 };
@@ -117,7 +137,8 @@ const StartAcceptWordIntentHandler = {
         const speakOutput = '鍵なしで解読します。1つ目の単語をどうぞ';
 
         u.setState(handlerInput, ACCEPT_WORD);
-        u.setSessionValue(handlerInput, 'WORD_NUM', 1);
+        u.setSessionValue(handlerInput, 'WORD_COUNT', 1);
+        u.setSessionValue(handlerInput, 'ENCRYPTED_KEY', c.DEFAULT_RANDOMKEY);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -140,13 +161,13 @@ const AcceptWordIntentHandler = {
         console.log("単語取得Value:" + wordValue);
 
         // 何番目の単語を取り扱っているかチェック
-        const wordNum = u.getSessionValue(handlerInput, 'WORD_NUM');
+        const wordCount = u.getSessionValue(handlerInput, 'WORD_COUNT');
 
         // ステータスチェック。失敗の場合は再受付
         let statusCode = wordSlot.resolutionsPerAuthority[0].status.code;
         console.log("単語取得ステータス:" + statusCode);
         if (statusCode !== 'ER_SUCCESS_MATCH') {
-            console.log("単語取得失敗(" + wordNum + "番目)");
+            console.log("単語取得失敗(" + wordCount + "番目)");
             return handlerInput.responseBuilder
                 .speak('単語を認識できませんでした。もう一度お願いします。')
                 // TODO 最終的には消す
@@ -158,18 +179,47 @@ const AcceptWordIntentHandler = {
         // 単語取得成功した場合
         let wordId = parseInt(wordSlot.resolutionsPerAuthority[0].values[0].value.id);
         let wordName = wordSlot.resolutionsPerAuthority[0].values[0].value.name;
-        console.log("単語取得成功(" + wordNum + "番目): " + wordName + "[" + wordId + "]");
+        console.log("単語取得成功(" + wordCount + "番目): " + wordName + "[" + wordId + "]");
 
-        // 1つ目だった場合、単語の数と内部キーを算出
-        if (wordNum == 1) {
-            let keyInfo = u.getInnerKeyAndWordCount(wordId);
-            let innerKey = keyInfo.innerKey;
-            let wordCount = keyInfo.wordCount;
-            console.log("内部キー:" + innerKey);
-            console.log("単語数:" + wordCount);
+        let totalWordCount;
+        let wordIds;
+        if (wordCount == 1) {
+            // 1つ目だった場合、単語の数と内部キーを算出
+            let keyInfo = u.getInnerKeyAndTotalWordCount(wordId);
+            totalWordCount = keyInfo.totalWordCount;
+            console.log("単語数:" + totalWordCount);
+            u.setSessionValue(handlerInput, 'TOTAL_WORD_COUNT', totalWordCount);
+            wordIds = [];
+        } else {
+            // 2つ目以降だった場合、単語の数はセッションから取得
+            totalWordCount = u.getSessionValue(handlerInput, 'TOTAL_WORD_COUNT');
+            wordIds = u.getSessionValue(handlerInput, 'WORD_IDS');
+        }
+        console.log("単語数:" + wordCount + "/" + totalWordCount)
+        wordIds.push(wordId);
+        console.log("単語ID一覧:" + wordIds);
+
+        // 単語数を満たした場合、複合実施
+        if (wordCount == totalWordCount) {
+            console.log("複合化実施");
+            let intKey = u.getSessionValue(handlerInput, 'ENCRYPTED_KEY');
+            let decryptMessage = u.decrypt(intKey, wordIds);
+            let speakOutput = "メッセージは、" + decryptMessage + "、です。"
+
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .withSimpleCard('解読後メッセージ', decryptMessage)
+                //            .reprompt(speakOutput)
+                .getResponse();
+
+
+
         }
 
-        //        const speakOutput = '単語を受け付けました';
+        // セッション保管
+        u.setSessionValue(handlerInput, 'WORD_COUNT', wordCount + 1);
+        u.setSessionValue(handlerInput, 'WORD_IDS', wordIds);
+
         const speakOutput = wordName;
         return handlerInput.responseBuilder
             .speak(speakOutput)
