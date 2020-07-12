@@ -115,14 +115,14 @@ const AcceptKeyFollowAndStartAcceptWordIntentHandler = {
         let speech = new Speech()
             .say('鍵')
             .sayAs({ "word": key, "interpret": "digits" })
-            .say('で解読します。1つ目の単語をどうぞ');
+            .say('で解読します。1番目の単語をどうぞ');
 
         u.setState(handlerInput, ACCEPT_WORD);
         u.setSessionValue(handlerInput, 'WORD_COUNT', 1);
         u.setSessionValue(handlerInput, 'ENCRYPTED_KEY', intKey);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .reprompt("1つ目の単語をどうぞ")
+            .reprompt("1番目の単語をどうぞ")
             .getResponse();
     }
 };
@@ -135,14 +135,14 @@ const StartAcceptWordIntentHandler = {
             && u.checkState(handlerInput, CONFIRM_USE_KEY);
     },
     handle(handlerInput) {
-        const speakOutput = '鍵なしで解読します。1つ目の単語をどうぞ';
+        const speakOutput = '鍵なしで解読します。1番目の単語をどうぞ';
 
         u.setState(handlerInput, ACCEPT_WORD);
         u.setSessionValue(handlerInput, 'WORD_COUNT', 1);
         u.setSessionValue(handlerInput, 'ENCRYPTED_KEY', c.DEFAULT_RANDOMKEY);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt('1番目の単語をどうぞ')
             .getResponse();
     }
 };
@@ -173,7 +173,7 @@ const AcceptWordIntentHandler = {
                 .speak('単語を認識できませんでした。もう一度お願いします。')
                 // TODO 最終的には消す
                 .withSimpleCard('失敗単語', wordValue)
-                .reprompt(c.MSG_notGenerateScrambleYet)
+                .reprompt('単語を認識できませんでした。もう一度お願いします。')
                 .getResponse();
         }
 
@@ -221,9 +221,13 @@ const AcceptWordIntentHandler = {
         u.setSessionValue(handlerInput, 'WORD_COUNT', wordCount + 1);
         u.setSessionValue(handlerInput, 'WORD_IDS', wordIds);
 
-        const speakOutput = wordName;
+        // TODO 最後に入れ替える
+        //const speakOutput = wordName;
+        const speakOutput = (wordCount + 1) + '番目の単語をどうぞ。';
+        
         return handlerInput.responseBuilder
             .speak(speakOutput)
+            // TODO カードは最後に消す
             .withSimpleCard('成功単語', wordName + '(' + wordValue + ')')
             .reprompt(speakOutput)
             .getResponse();
@@ -334,7 +338,7 @@ const ErrorHandler = {
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt("もう一度お試しください。")
             .getResponse();
     }
 };
