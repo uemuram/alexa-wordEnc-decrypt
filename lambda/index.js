@@ -24,6 +24,7 @@ const LaunchRequestHandler = {
         const repromptOutput = '鍵は設定されていますか?';
 
         u.setState(handlerInput, CONFIRM_USE_KEY);
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptOutput)
@@ -40,11 +41,13 @@ const RequestKeyIntentHandler = {
     },
     handle(handlerInput) {
         const speakOutput = '鍵に設定されている4桁の数字を言ってください';
+        const repromptOutput = '4桁の数字を言ってください';
 
         u.setState(handlerInput, ACCEPT_KEY);
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -65,14 +68,16 @@ const AcceptKeyAndStartAcceptWordIntentHandler = {
         let speech = new Speech()
             .say('鍵')
             .sayAs({ "word": key, "interpret": "digits" })
-            .say('で解読します。1つ目の単語をどうぞ');
+            .say('で解読します。1番目の単語をどうぞ');
+        const repromptOutput = '1番目の単語をどうぞ。';
 
         u.setState(handlerInput, ACCEPT_WORD);
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         u.setSessionValue(handlerInput, 'WORD_COUNT', 1);
         u.setSessionValue(handlerInput, 'ENCRYPTED_KEY', intKey);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .reprompt("1つ目の単語をどうぞ")
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -99,15 +104,18 @@ const AcceptKeyFollowAndStartAcceptWordIntentHandler = {
         // 補正した上で「4桁の数字」にならなけばエラー返却
         if (!key.match(/^[0-9]{4}$/)) {
             const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
-            const speakOutput = `鍵を認識できませんでした。4桁の数字を言ってください。`;
             console.log(intentName);
+
+            const speakOutput = `鍵を認識できませんでした。4桁の数字を言ってください。`;
+            const repromptOutput = '4桁の数字を言ってください';
+
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('鍵に設定されている4桁の数字を言ってください')
+                .reprompt(repromptOutput)
                 .getResponse();
         }
 
-        let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Key');
         let intKey = parseInt(key);
         console.log('鍵 :' + key);
         console.log('鍵(int) :' + intKey);
@@ -116,13 +124,15 @@ const AcceptKeyFollowAndStartAcceptWordIntentHandler = {
             .say('鍵')
             .sayAs({ "word": key, "interpret": "digits" })
             .say('で解読します。1番目の単語をどうぞ');
+        const repromptOutput = '1番目の単語をどうぞ';
 
         u.setState(handlerInput, ACCEPT_WORD);
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         u.setSessionValue(handlerInput, 'WORD_COUNT', 1);
         u.setSessionValue(handlerInput, 'ENCRYPTED_KEY', intKey);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .reprompt("1番目の単語をどうぞ")
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -136,13 +146,15 @@ const StartAcceptWordIntentHandler = {
     },
     handle(handlerInput) {
         const speakOutput = '鍵なしで解読します。1番目の単語をどうぞ';
+        const repromptOutput = '1番目の単語をどうぞ';
 
         u.setState(handlerInput, ACCEPT_WORD);
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         u.setSessionValue(handlerInput, 'WORD_COUNT', 1);
         u.setSessionValue(handlerInput, 'ENCRYPTED_KEY', c.DEFAULT_RANDOMKEY);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt('1番目の単語をどうぞ')
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -169,11 +181,15 @@ const AcceptWordIntentHandler = {
         console.log("単語取得ステータス:" + statusCode);
         if (statusCode !== 'ER_SUCCESS_MATCH') {
             console.log("単語取得失敗(" + wordCount + "番目)");
+
+            const repromptOutput = '単語を認識できませんでした。もう一度お願いします。';
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+
             return handlerInput.responseBuilder
                 .speak('単語を認識できませんでした。もう一度お願いします。')
                 // TODO 最終的には消す
                 .withSimpleCard('失敗単語', wordValue)
-                .reprompt('単語を認識できませんでした。もう一度お願いします。')
+                .reprompt(repromptOutput)
                 .getResponse();
         }
 
@@ -206,14 +222,16 @@ const AcceptWordIntentHandler = {
             let intKey = u.getSessionValue(handlerInput, 'ENCRYPTED_KEY');
             let decryptMessage = u.decrypt(intKey, wordIds);
             let speakOutput = "メッセージは、" + decryptMessage + "、です。もう一度読み上げますか?"
+            const repromptOutput = 'もう一度読み上げますか?';
 
             u.setState(handlerInput, CONFIRM_REREAD);
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
             u.setSessionValue(handlerInput, 'DECRYPT_MESSAGE', decryptMessage);
 
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .withSimpleCard('解読後メッセージ', decryptMessage)
-                .reprompt("もう一度読み上げますか?")
+                .reprompt(repromptOutput)
                 .getResponse();
         }
 
@@ -224,12 +242,14 @@ const AcceptWordIntentHandler = {
         // TODO 最後に入れ替える
         //const speakOutput = wordName;
         const speakOutput = (wordCount + 1) + '番目の単語をどうぞ。';
-        
+        const repromptOutput = speakOutput;
+
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             // TODO カードは最後に消す
             .withSimpleCard('成功単語', wordName + '(' + wordValue + ')')
-            .reprompt(speakOutput)
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -245,10 +265,12 @@ const ReReadIntentHandler = {
         const decryptMessage = u.getSessionValue(handlerInput, 'DECRYPT_MESSAGE');
 
         let speakOutput = "メッセージは、" + decryptMessage + "、です。もう一度読み上げますか?"
+        const repromptOutput = 'もう一度読み上げますか?';
 
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt("もう一度読み上げますか?")
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -316,11 +338,13 @@ const IntentReflectorHandler = {
     },
     handle(handlerInput) {
         const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
-        const speakOutput = `想定外の呼び出しが発生しました。もう一度お試しください。`;
+        const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+        const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+
         console.log(intentName);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt('もう一度お試しください。')
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -334,11 +358,12 @@ const ErrorHandler = {
     },
     handle(handlerInput, error) {
         console.log(`~~~~ Error handled: ${error.stack}`);
-        const speakOutput = `エラーが発生しました。もう一度お試しください。`;
+        const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+        const speakOutput = `エラーが発生しました。` + repromptOutput;
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt("もう一度お試しください。")
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
