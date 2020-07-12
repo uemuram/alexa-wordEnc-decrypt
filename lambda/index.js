@@ -12,6 +12,7 @@ const c = new Constant();
 const ACCEPT_WORD = 0;
 const CONFIRM_USE_KEY = 1;
 const ACCEPT_KEY = 2;
+const CONFIRM_REREAD = 3;
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -199,21 +200,21 @@ const AcceptWordIntentHandler = {
         wordIds.push(wordId);
         console.log("単語ID一覧:" + wordIds);
 
-        // 単語数を満たした場合、複合実施
+        // 単語数を満たした場合、復号実施
         if (wordCount == totalWordCount) {
             console.log("複合化実施");
             let intKey = u.getSessionValue(handlerInput, 'ENCRYPTED_KEY');
             let decryptMessage = u.decrypt(intKey, wordIds);
-            let speakOutput = "メッセージは、" + decryptMessage + "、です。"
+            let speakOutput = "メッセージは、" + decryptMessage + "、です。もう一度読み上げますか?"
+
+            u.setState(handlerInput, CONFIRM_REREAD);
+            u.setSessionValue(handlerInput, 'DECRYPT_MESSAGE', decryptMessage);
 
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .withSimpleCard('解読後メッセージ', decryptMessage)
-                //            .reprompt(speakOutput)
+                .reprompt("もう一度読み上げますか?")
                 .getResponse();
-
-
-
         }
 
         // セッション保管
@@ -229,6 +230,40 @@ const AcceptWordIntentHandler = {
     }
 };
 
+// メッセージを再度読み上げする
+const ReReadIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+            && u.checkState(handlerInput, CONFIRM_REREAD);
+    },
+    handle(handlerInput) {
+        const decryptMessage = u.getSessionValue(handlerInput, 'DECRYPT_MESSAGE');
+
+        let speakOutput = "メッセージは、" + decryptMessage + "、です。もう一度読み上げますか?"
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt("もう一度読み上げますか?")
+            .getResponse();
+    }
+};
+
+// 終了
+const FinishIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+            && u.checkState(handlerInput, CONFIRM_REREAD);
+    },
+    handle(handlerInput) {
+        const speakOutput = 'ご利用ありがとうございました。。';
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .getResponse();
+    }
+};
 
 const HelpIntentHandler = {
     canHandle(handlerInput) {
@@ -329,6 +364,8 @@ exports.handler = Alexa.SkillBuilders.custom()
         AcceptKeyFollowAndStartAcceptWordIntentHandler,
         StartAcceptWordIntentHandler,
         AcceptWordIntentHandler,
+        ReReadIntentHandler,
+        FinishIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
