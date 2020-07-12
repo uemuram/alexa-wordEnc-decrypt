@@ -19,8 +19,7 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        //        const speakOutput = 'ようこそ。このスキルでは、姉妹スキル「暗号くん」で暗号化されたメッセージを解読します。';
-        const speakOutput = 'ようこそ。解読します。鍵は設定されていますか?';
+        const speakOutput = 'ようこそ。このスキルでは、姉妹スキル「暗号くん」で暗号化されたメッセージを解読します。メッセージに鍵は設定されていますか?';
         const repromptOutput = '鍵は設定されていますか?';
 
         u.setState(handlerInput, CONFIRM_USE_KEY);
@@ -338,10 +337,25 @@ const IntentReflectorHandler = {
     },
     handle(handlerInput) {
         const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
-        const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
-        const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
-
         console.log(intentName);
+
+        let repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+        let speakOutput;
+
+        // リプロンプトメッセージがとれなかった場合は、スキルを最初から始める
+        if (!repromptOutput) {
+            speakOutput = 'ようこそ。このスキルでは、姉妹スキル「暗号くん」で暗号化されたメッセージを解読します。メッセージに鍵は設定されていますか?';
+            repromptOutput = '鍵は設定されていますか?';
+
+            u.setState(handlerInput, CONFIRM_USE_KEY);
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt(repromptOutput)
+                .getResponse();
+        }
+
+        speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptOutput)
