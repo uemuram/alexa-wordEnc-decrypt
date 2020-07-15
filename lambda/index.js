@@ -216,7 +216,9 @@ const AcceptWordIntentHandler = {
         console.log("単語ID一覧:" + wordIds);
 
         // 単語数を満たした場合、復号実施
-        if (wordCount == totalWordCount) {
+        // TODO 最後に入れ替える
+        if (false) {
+//        if (wordCount == totalWordCount) {
             console.log("複合化実施");
             let intKey = u.getSessionValue(handlerInput, 'ENCRYPTED_KEY');
             let decryptMessage = u.decrypt(intKey, wordIds);
@@ -239,8 +241,8 @@ const AcceptWordIntentHandler = {
         u.setSessionValue(handlerInput, 'WORD_IDS', wordIds);
 
         // TODO 最後に入れ替える
-        //const speakOutput = wordName;
-        const speakOutput = (wordCount + 1) + '番目の単語をどうぞ。';
+        const speakOutput = wordName;
+        //const speakOutput = (wordCount + 1) + '番目の単語をどうぞ。';
         const repromptOutput = speakOutput;
 
         u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
@@ -366,6 +368,7 @@ const IntentReflectorHandler = {
                 .getResponse();
         }
 
+        console.log('想定外呼び出し発生');
         speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
         return handlerInput.responseBuilder
             .speak(speakOutput)
