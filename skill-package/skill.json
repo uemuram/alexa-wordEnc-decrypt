@@ -8,13 +8,17 @@
             "アレクサ、暗号解読くんを開いて"
           ],
           "name": "暗号解読くん",
+          "smallIconUri": "https://uemuram.github.io/alexa-wordEnc-decrypt/icon108.png",
+          "largeIconUri": "https://uemuram.github.io/alexa-wordEnc-decrypt/icon512.png",
           "description": "Sample Full Description"
         }
       },
       "isAvailableWorldwide": false,
       "testingInstructions": "Sample Testing Instructions.",
       "category": "KNOWLEDGE_AND_TRIVIA",
-      "distributionCountries": ["JP"]
+      "distributionCountries": [
+        "JP"
+      ]
     },
     "apis": {
       "custom": {
