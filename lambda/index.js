@@ -64,6 +64,21 @@ const AcceptKeyAndStartAcceptWordIntentHandler = {
         console.log('鍵 :' + key);
         console.log('鍵(int) :' + intKey);
 
+        // 「4桁の数字」出なかった場合はエラー返却(AMAZON.FOUR_DIGIT_NUMBER で受けているので4桁しか入ってこないはずだが、なぜがそれ以外が来ることがあるので弾く)
+        if (!key.match(/^[0-9]{4}$/)) {
+            const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
+            console.log(intentName);
+
+            const speakOutput = `鍵を認識できませんでした。4桁の数字を言ってください。`;
+            const repromptOutput = '4桁の数字を言ってください';
+
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt(repromptOutput)
+                .getResponse();
+        }
+
         let speech = new Speech()
             .say('鍵')
             .sayAs({ "word": key, "interpret": "digits" })
