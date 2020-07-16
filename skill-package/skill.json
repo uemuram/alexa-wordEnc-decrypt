@@ -3,19 +3,25 @@
     "publishingInformation": {
       "locales": {
         "ja-JP": {
-          "summary": "Sample Short Description",
+          "summary": "暗号化されたメッセージを解読するスキルです。",
           "examplePhrases": [
             "アレクサ、暗号解読くんを開いて"
           ],
           "name": "暗号解読くん",
+          "keywords": [
+            "暗号",
+            "暗号化",
+            "復号化",
+            "暗号解読"
+          ],
           "smallIconUri": "https://uemuram.github.io/alexa-wordEnc-decrypt/icon108.png",
           "largeIconUri": "https://uemuram.github.io/alexa-wordEnc-decrypt/icon512.png",
           "description": "Sample Full Description"
         }
       },
       "isAvailableWorldwide": false,
-      "testingInstructions": "Sample Testing Instructions.",
-      "category": "KNOWLEDGE_AND_TRIVIA",
+      "testingInstructions": "Alexa対応デバイス以外に必要なものはありませんが、別途申請中の「暗号作成くん」スキルで暗号化したフレーズを解読するためのスキルなので、入力情報として「暗号作成くん」を動かした結果が必要となります。",
+      "category": "COMMUNICATION",
       "distributionCountries": [
         "JP"
       ]
