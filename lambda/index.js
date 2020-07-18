@@ -182,29 +182,14 @@ const AcceptWordIntentHandler = {
     },
     handle(handlerInput) {
 
-        // 単語を確認
-        let wordSlot = handlerInput.requestEnvelope.request.intent.slots.Word.resolutions;
+        // 単語情報を取得
+        const wordInfo = u.getWordFromHandler(handlerInput);
 
-        // ステータスチェック
-        let success = true;
-        let wordValue;
-        if (!wordSlot) {
-            success = false;
-            console.log("slot取得失敗");            
-        } else {
-            wordValue = handlerInput.requestEnvelope.request.intent.slots.Word.value;
-            console.log("単語取得Value:" + wordValue);            
-            let statusCode = wordSlot.resolutionsPerAuthority[0].status.code;
-            console.log("単語取得ステータス:" + statusCode);
-            if (statusCode !== 'ER_SUCCESS_MATCH') {
-                success = false;
-            }
-        }
         // 何番目の単語を取り扱っているかチェック
         const wordCount = u.getSessionValue(handlerInput, 'WORD_COUNT');
 
-        // ステータスチェック。失敗の場合は再受付
-        if (!success) {
+        // 単語を取得できたかチェック。失敗の場合は再受付
+        if (!wordInfo.matchId) {
             console.log("単語取得失敗(" + wordCount + "番目)");
             const repromptOutput = '単語を認識できませんでした。もう一度お願いします。';
             u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
@@ -212,21 +197,19 @@ const AcceptWordIntentHandler = {
             return handlerInput.responseBuilder
                 .speak('単語を認識できませんでした。もう一度お願いします。')
                 // TODO 最終的には消す
-                .withSimpleCard('失敗単語', wordValue)
+                .withSimpleCard('失敗単語', wordInfo.getValue ? wordInfo.getValue : "-")
                 .reprompt(repromptOutput)
                 .getResponse();
         }
 
         // 単語取得成功した場合
-        let wordId = parseInt(wordSlot.resolutionsPerAuthority[0].values[0].value.id);
-        let wordName = wordSlot.resolutionsPerAuthority[0].values[0].value.name;
-        console.log("単語取得成功(" + wordCount + "番目): " + wordName + "[" + wordId + "]");
+        console.log("単語取得成功(" + wordCount + "番目): " + wordInfo.matchValue + "[" + wordInfo.matchId + "]");
 
         let totalWordCount;
         let wordIds;
         if (wordCount == 1) {
             // 1つ目だった場合、単語の数と内部キーを算出
-            let keyInfo = u.getInnerKeyAndTotalWordCount(wordId);
+            let keyInfo = u.getInnerKeyAndTotalWordCount(wordInfo.matchId);
             totalWordCount = keyInfo.totalWordCount;
             console.log("単語数:" + totalWordCount);
             u.setSessionValue(handlerInput, 'TOTAL_WORD_COUNT', totalWordCount);
@@ -237,13 +220,13 @@ const AcceptWordIntentHandler = {
             wordIds = u.getSessionValue(handlerInput, 'WORD_IDS');
         }
         console.log("単語数:" + wordCount + "/" + totalWordCount)
-        wordIds.push(wordId);
+        wordIds.push(wordInfo.matchId);
         console.log("単語ID一覧:" + wordIds);
 
         // 単語数を満たした場合、復号実施
         // TODO 最後に入れ替える
-        if (false) {
-//        if (wordCount == totalWordCount) {
+        //if (false) {
+        if (wordCount == totalWordCount) {
             console.log("複合化実施");
             let intKey = u.getSessionValue(handlerInput, 'ENCRYPTED_KEY');
             let decryptMessage = u.decrypt(intKey, wordIds);
@@ -266,15 +249,15 @@ const AcceptWordIntentHandler = {
         u.setSessionValue(handlerInput, 'WORD_IDS', wordIds);
 
         // TODO 最後に入れ替える
-        const speakOutput = wordName;
-        //const speakOutput = (wordCount + 1) + '番目の単語をどうぞ。';
+        //const speakOutput = wordInfo.matchValue;
+        const speakOutput = (wordCount + 1) + '番目の単語をどうぞ。';
         const repromptOutput = speakOutput;
 
         u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             // TODO カードは最後に消す
-            .withSimpleCard('成功単語', wordName + '(' + wordValue + ')')
+            // .withSimpleCard('成功単語', wordInfo.getValue + '(' + wordInfo.matchValue + ')')
             .reprompt(repromptOutput)
             .getResponse();
     }
