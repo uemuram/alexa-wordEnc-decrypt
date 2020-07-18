@@ -184,18 +184,28 @@ const AcceptWordIntentHandler = {
 
         // 単語を確認
         let wordSlot = handlerInput.requestEnvelope.request.intent.slots.Word.resolutions;
-        let wordValue = handlerInput.requestEnvelope.request.intent.slots.Word.value;
-        console.log("単語取得Value:" + wordValue);
 
+        // ステータスチェック
+        let success = true;
+        let wordValue;
+        if (!wordSlot) {
+            success = false;
+            console.log("slot取得失敗");            
+        } else {
+            wordValue = handlerInput.requestEnvelope.request.intent.slots.Word.value;
+            console.log("単語取得Value:" + wordValue);            
+            let statusCode = wordSlot.resolutionsPerAuthority[0].status.code;
+            console.log("単語取得ステータス:" + statusCode);
+            if (statusCode !== 'ER_SUCCESS_MATCH') {
+                success = false;
+            }
+        }
         // 何番目の単語を取り扱っているかチェック
         const wordCount = u.getSessionValue(handlerInput, 'WORD_COUNT');
 
         // ステータスチェック。失敗の場合は再受付
-        let statusCode = wordSlot.resolutionsPerAuthority[0].status.code;
-        console.log("単語取得ステータス:" + statusCode);
-        if (statusCode !== 'ER_SUCCESS_MATCH') {
+        if (!success) {
             console.log("単語取得失敗(" + wordCount + "番目)");
-
             const repromptOutput = '単語を認識できませんでした。もう一度お願いします。';
             u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
 
