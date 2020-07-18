@@ -173,6 +173,43 @@ const StartAcceptWordIntentHandler = {
     }
 };
 
+// 暗号化用の鍵なしで、単語の受付を開始する(2)
+// 単語が入ってきたとき用
+const StartAcceptWordFollowIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptWordIntent'
+            && u.checkState(handlerInput, CONFIRM_USE_KEY);
+    },
+    handle(handlerInput) {
+        // 「いいえ」に近い言葉になっているか確認
+        let wordInfo = u.getWordFromHandler(handlerInput);
+        console.log("入力(単語?) :" + wordInfo.getValue);
+        if (wordInfo.getValue && c.NO_MESSAGES.indexOf(wordInfo.getValue) != -1) {
+            console.log("「いいえ」と判定");
+            const speakOutput = '鍵なしで解読します。1番目の単語をどうぞ';
+            const repromptOutput = '1番目の単語をどうぞ';
+
+            u.setState(handlerInput, ACCEPT_WORD);
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+            u.setSessionValue(handlerInput, 'WORD_COUNT', 1);
+            u.setSessionValue(handlerInput, 'ENCRYPTED_KEY', c.DEFAULT_RANDOMKEY);
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt(repromptOutput)
+                .getResponse();
+        }
+
+        const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+        const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+        console.log('想定外呼び出し発生2');
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(repromptOutput)
+            .getResponse();
+    }
+};
+
 // 単語を受け付ける
 const AcceptWordIntentHandler = {
     canHandle(handlerInput) {
@@ -197,7 +234,7 @@ const AcceptWordIntentHandler = {
             return handlerInput.responseBuilder
                 .speak('単語を認識できませんでした。もう一度お願いします。')
                 // TODO 最終的には消す
-                .withSimpleCard('失敗単語', wordInfo.getValue ? wordInfo.getValue : "-")
+                //.withSimpleCard('失敗単語', wordInfo.getValue ? wordInfo.getValue : "-")
                 .reprompt(repromptOutput)
                 .getResponse();
         }
@@ -257,7 +294,7 @@ const AcceptWordIntentHandler = {
         return handlerInput.responseBuilder
             .speak(speakOutput)
             // TODO カードは最後に消す
-            // .withSimpleCard('成功単語', wordInfo.getValue + '(' + wordInfo.matchValue + ')')
+            //.withSimpleCard('成功単語', wordInfo.getValue + '(' + wordInfo.matchValue + ')')
             .reprompt(repromptOutput)
             .getResponse();
     }
@@ -296,6 +333,36 @@ const FinishIntentHandler = {
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
+            .getResponse();
+    }
+};
+
+// 終了(2)
+// 終了確認中に、フリーのメッセージが入ってきてしまった場合
+const FinishFollowIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptWordIntent'
+            && u.checkState(handlerInput, CONFIRM_REREAD);
+    },
+    handle(handlerInput) {
+        // 「いいえ」に近い言葉になっているか確認
+        let wordInfo = u.getWordFromHandler(handlerInput);
+        console.log("入力(単語?) :" + wordInfo.getValue);
+        if (wordInfo.getValue && c.NO_MESSAGES.indexOf(wordInfo.getValue) != -1) {
+            console.log("「いいえ」と判定");
+            const speakOutput = 'ご利用ありがとうございました。';
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .getResponse();
+        }
+
+        const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+        const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+        console.log('想定外呼び出し発生2');
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -428,9 +495,11 @@ exports.handler = Alexa.SkillBuilders.custom()
         AcceptKeyAndStartAcceptWordIntentHandler,
         AcceptKeyFollowAndStartAcceptWordIntentHandler,
         StartAcceptWordIntentHandler,
+        StartAcceptWordFollowIntentHandler,
         AcceptWordIntentHandler,
         ReReadIntentHandler,
         FinishIntentHandler,
+        FinishFollowIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
