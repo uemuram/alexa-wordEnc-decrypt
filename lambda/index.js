@@ -226,15 +226,15 @@ const AcceptWordIntentHandler = {
         const wordCount = u.getSessionValue(handlerInput, 'WORD_COUNT');
 
         // 単語を取得できたかチェック。失敗の場合は再受付
-        if (!wordInfo.matchId) {
+        if (wordInfo.matchId == null) {
             console.log("単語取得失敗(" + wordCount + "番目)");
             const repromptOutput = '単語を認識できませんでした。もう一度お願いします。';
             u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
 
             return handlerInput.responseBuilder
                 .speak('単語を認識できませんでした。もう一度お願いします。')
-                // TODO 最終的には消す
-                //.withSimpleCard('失敗単語', wordInfo.getValue ? wordInfo.getValue : "-")
+                // TODO テスト時のみ有効化
+                // .withSimpleCard('失敗単語', wordInfo.getValue ? wordInfo.getValue : "-")
                 .reprompt(repromptOutput)
                 .getResponse();
         }
@@ -261,8 +261,8 @@ const AcceptWordIntentHandler = {
         console.log("単語ID一覧:" + wordIds);
 
         // 単語数を満たした場合、復号実施
-        // TODO 最後に入れ替える
-        //if (false) {
+        // TODO テスト時のみ入れ替える
+        // if (false) {
         if (wordCount == totalWordCount) {
             console.log("複合化実施");
             let intKey = u.getSessionValue(handlerInput, 'ENCRYPTED_KEY');
@@ -285,7 +285,7 @@ const AcceptWordIntentHandler = {
         u.setSessionValue(handlerInput, 'WORD_COUNT', wordCount + 1);
         u.setSessionValue(handlerInput, 'WORD_IDS', wordIds);
 
-        // TODO 最後に入れ替える
+        // TODO テスト時のみ入れ替える
         //const speakOutput = wordInfo.matchValue;
         const speakOutput = (wordCount + 1) + '番目の単語をどうぞ。';
         const repromptOutput = speakOutput;
@@ -293,8 +293,8 @@ const AcceptWordIntentHandler = {
         u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            // TODO カードは最後に消す
-            //.withSimpleCard('成功単語', wordInfo.getValue + '(' + wordInfo.matchValue + ')')
+            // TODO テスト時のみ有効にする
+            // .withSimpleCard('成功単語', wordInfo.getValue + '(' + wordInfo.matchValue + ')')
             .reprompt(repromptOutput)
             .getResponse();
     }
