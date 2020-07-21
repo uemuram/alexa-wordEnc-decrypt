@@ -48,6 +48,53 @@
                     ]
                 },
                 {
+                    "name": "ConfirmUseKeyYesIntent",
+                    "slots": [
+                    ],
+                    "samples": [
+                        "されてます",
+                        "設定されてます",
+                        "されています",
+                        "設定されています"
+                    ]
+                },
+                {
+                    "name": "ConfirmUseKeyNoIntent",
+                    "slots": [
+                    ],
+                    "samples": [
+                        "されてません",
+                        "設定されてません",
+                        "されていません",
+                        "設定されていません",
+                        "されてないです",
+                        "設定されてないです"
+
+                    ]
+                },
+                {
+                    "name": "ConfirmRereadYesIntent",
+                    "slots": [
+                    ],
+                    "samples": [
+                        "読み上げる",
+                        "読み上げて",
+                        "読み上げます",
+                        "読み上げてください"
+                    ]
+                },
+                {
+                    "name": "ConfirmRereadNoIntent",
+                    "slots": [
+                    ],
+                    "samples": [
+                        "読み上げない",
+                        "読み上げないで",
+                        "読み上げません",
+                        "読み上げないでください"
+                    ]
+                },
+                {
                     "name": "AMAZON.NavigateHomeIntent",
                     "samples": []
                 }

@@ -35,8 +35,13 @@ const LaunchRequestHandler = {
 const RequestKeyIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
-            && u.checkState(handlerInput, CONFIRM_USE_KEY);
+            && (
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+                    && u.checkState(handlerInput, CONFIRM_USE_KEY))
+                ||
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'ConfirmUseKeyYesIntent'
+                    && u.checkState(handlerInput, CONFIRM_USE_KEY))
+            );
     },
     handle(handlerInput) {
         const speakOutput = '鍵に設定されている4桁の数字を言ってください';
@@ -155,8 +160,13 @@ const AcceptKeyFollowAndStartAcceptWordIntentHandler = {
 const StartAcceptWordIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
-            && u.checkState(handlerInput, CONFIRM_USE_KEY);
+            && (
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+                    && u.checkState(handlerInput, CONFIRM_USE_KEY))
+                ||
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'ConfirmUseKeyNoIntent'
+                    && u.checkState(handlerInput, CONFIRM_USE_KEY))
+            );
     },
     handle(handlerInput) {
         const speakOutput = '鍵なしで解読します。1番目の単語をどうぞ';
@@ -304,8 +314,13 @@ const AcceptWordIntentHandler = {
 const ReReadIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
-            && u.checkState(handlerInput, CONFIRM_REREAD);
+            && (
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+                    && u.checkState(handlerInput, CONFIRM_REREAD))
+                ||
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'ConfirmRereadYesIntent'
+                    && u.checkState(handlerInput, CONFIRM_REREAD))
+            );
     },
     handle(handlerInput) {
         const decryptMessage = u.getSessionValue(handlerInput, 'DECRYPT_MESSAGE');
@@ -325,8 +340,13 @@ const ReReadIntentHandler = {
 const FinishIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
-            && u.checkState(handlerInput, CONFIRM_REREAD);
+            && (
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+                    && u.checkState(handlerInput, CONFIRM_REREAD))
+                ||
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'ConfirmRereadNoIntent'
+                    && u.checkState(handlerInput, CONFIRM_REREAD))
+            );
     },
     handle(handlerInput) {
         const speakOutput = 'ご利用ありがとうございました。';
