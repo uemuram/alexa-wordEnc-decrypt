@@ -19,7 +19,7 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'ようこそ。このスキルでは、姉妹スキル「暗号作成くん」で暗号化されたメッセージを解読します。メッセージに鍵は設定されていますか?';
+        const speakOutput = 'ようこそ。このスキルでは暗号化されたメッセージを解読します。メッセージに鍵は設定されていますか?';
         const repromptOutput = '鍵は設定されていますか?';
 
         u.setState(handlerInput, CONFIRM_USE_KEY);
@@ -374,15 +374,16 @@ const HelpIntentHandler = {
     },
     handle(handlerInput) {
         const speakOutput = `
-            このスキルでは、姉妹スキルの「暗号作成くん」で暗号化されたメッセージを解読します。
+            このスキルでは暗号化されたメッセージを解読します。
             暗号化されたメッセージは複数の単語の組み合わせになっているので、スキルの指示に従い1つずつAlexaに伝えてください。
             暗号に鍵が設定されている場合は、最初にAlexaに鍵として4桁の数字を伝える必要があります。
-            鍵が間違っていると、メッセージが正しく解読されません。`;
+            鍵が間違っていると、メッセージが正しく解読されません。
+            また、このスキルで解読できる暗号を作る方法は、スキルの説明文に記載されていますのでそちらをご確認ください。`;
         let repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
 
         if (repromptOutput) {
             return handlerInput.responseBuilder
-                .speak(speakOutput)
+                .speak(speakOutput + repromptOutput)
                 .reprompt(repromptOutput)
                 .getResponse();
         } else {
@@ -432,7 +433,7 @@ const IntentReflectorHandler = {
 
         // リプロンプトメッセージがとれなかった場合は、スキルを最初から始める
         if (!repromptOutput) {
-            speakOutput = 'ようこそ。このスキルでは、姉妹スキル「暗号作成くん」で暗号化されたメッセージを解読します。メッセージに鍵は設定されていますか?';
+            speakOutput = 'ようこそ。このスキルでは暗号化されたメッセージを解読します。メッセージに鍵は設定されていますか?';
             repromptOutput = '鍵は設定されていますか?';
 
             u.setState(handlerInput, CONFIRM_USE_KEY);
